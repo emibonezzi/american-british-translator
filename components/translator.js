@@ -17,6 +17,130 @@ class Translator {
       .join("");
   }
 
+  checkMultipleTerms(arr, locale) {
+    // US to UK
+    if (locale === "american-to-british") {
+      let fullWord = [];
+      let wordsToJoin = [];
+      let indexToReplace = [];
+
+      for (let term of Object.keys(americanOnly)) {
+        fullWord = [];
+        for (let i = 0; i < arr.length; i++) {
+          // if term contains more than 1 word
+          if (term.split(" ").length > 1) {
+            // loop through term to establish exact match
+            for (let singularWord of term.split(" ")) {
+              // if singularWord matches add word to fullWord
+              if (arr[i].toLowerCase() === singularWord) {
+                console.log(arr[i], "is equal to", singularWord, "of", term);
+                indexToReplace.push(i);
+                fullWord.push(arr[i]);
+                console.log("Current word is:", fullWord.join(" ").toLowerCase())
+                console.log("Current term is:", term)
+                if (term === fullWord.join(" ").toLowerCase()) {
+                  console.log("MA ALLORA PORCA MAD")
+                  console.log(fullWord);
+                  fullWord = [...new Set(fullWord)]; // delete possible duplicates
+                  wordsToJoin.push({
+                    word: fullWord.join(" "),
+                    indexes: indexToReplace,
+                  });
+
+                  fullWord = [];
+                  indexToReplace = [];
+                } 
+              }
+            }
+          }
+        }
+      }
+
+      console.log(wordsToJoin);
+      console.log(fullWord);
+
+      let allIndexes = [];
+
+      // start replacing involved words with their full words
+      for (let word of wordsToJoin) {
+        for (let index of word.indexes) {
+          if (!allIndexes.includes(index)) {
+            allIndexes.push(index)
+            arr[index] = word.word
+          } else {
+            // in case of words already replaced check length and pick the longer one
+            if (!arr[index].length > word.word) {
+              arr[index] = word.word;
+            }
+          }
+        }
+      }
+    } else {
+      // UK to US
+      let fullWord = [];
+      let wordsToJoin = [];
+      let indexToReplace = [];
+
+      for (let term of Object.keys(britishOnly)) {
+        fullWord = [];
+        for (let i = 0; i < arr.length; i++) {
+          // if term contains more than 1 word
+          if (term.split(" ").length > 1) {
+            // loop through term to establish exact match
+            for (let singularWord of term.split(" ")) {
+              // if singularWord matches add word to fullWord
+              if (arr[i].toLowerCase() === singularWord) {
+                console.log(arr[i], "is equal to", singularWord, "of", term);
+                indexToReplace.push(i);
+                fullWord.push(arr[i]);
+                console.log("Current word is:", fullWord.join(" ").toLowerCase())
+                console.log("Current term is:", term)
+                if (term === fullWord.join(" ").toLowerCase()) {
+                  console.log("MA ALLORA PORCA MAD")
+                  console.log(fullWord);
+                  fullWord = [...new Set(fullWord)]; // delete possible duplicates
+                  wordsToJoin.push({
+                    word: fullWord.join(" "),
+                    indexes: indexToReplace,
+                  });
+
+                  fullWord = [];
+                  indexToReplace = [];
+                } 
+              }
+            }
+          }
+        }
+      }
+
+      console.log(wordsToJoin);
+      console.log(fullWord);
+
+      let allIndexes = [];
+
+      // start replacing involved words with their full words
+      for (let word of wordsToJoin) {
+        for (let index of word.indexes) {
+          if (!allIndexes.includes(index)) {
+            allIndexes.push(index)
+            arr[index] = word.word
+          } else {
+            // in case of words already replaced check length and pick the longer one
+            if (!arr[index].length > word.word) {
+              arr[index] = word.word;
+            }
+          }
+        }
+      }
+    }
+
+    // clean array from duplicates
+    let cleanedArr = [...new Set(arr)];
+
+    // return arr with multiple terms together
+    return cleanedArr;
+  }
+
   translate(text, locale) {
     let wordsArr = text.split(" ").map((item) => item.replace(/\W+/, ""));
     let titlesArr = text
@@ -26,33 +150,31 @@ class Translator {
           Object.keys(americanToBritishTitles).includes(item.toLowerCase()) ||
           Object.values(americanToBritishTitles).includes(item.toLowerCase())
       );
-    let timeArr = text.split(" ").filter((item) => /^\d+[:\.]\d+$/.test(item));
+    let timeArr = text
+      .split(" ")
+      .filter((item) => /^\d+[:\.]\d+/.test(item))
+      .map((item) => item.replace(/(?<=\d+)\.$/, ""));
     let changesMade = false;
 
     // US to UK
     if (locale === "american-to-british") {
       let bigUsList = { ...americanOnly, ...americanToBritishSpelling };
 
+      // check multiple terms
+      wordsArr = this.checkMultipleTerms(wordsArr, locale);
+
+      console.log(wordsArr);
+
       // check for words
       for (let word of wordsArr) {
-        for (let term of Object.keys(bigUsList)) {
-          if (term.split(" ").includes(word.toLowerCase())) {
-            console.log("Replacing..", word, "with", bigUsList[term])
-            text = text.replace(
-              word,
-              `<span class="highlight">${bigUsList[term]}</span>`
-            );
-            changesMade = true;
-          }
-        }
-
-        /* if (Object.keys(bigUsList).includes(word.toLowerCase())) {
+        if (Object.keys(bigUsList).includes(word.toLowerCase())) {
           text = text.replace(
             word,
             `<span class="highlight">${bigUsList[word.toLowerCase()]}</span>`
           );
+
           changesMade = true;
-        } */
+        }
       }
 
       // check for titles
@@ -84,14 +206,14 @@ class Translator {
 
       // check if no changes
       if (!changesMade) {
-        text = "Everything looks good to me!"
+        text = "Everything looks good to me!";
       }
+    }
 
-    } 
-
-    // UK to US 
+    // UK to US
     if (locale === "british-to-american") {
-
+      // check multiple terms
+      wordsArr = this.checkMultipleTerms(wordsArr, locale);
       // flip dictionaries
       let britishToAmericanSpelling = {};
       let britishToAmericanTitle = {};
@@ -102,7 +224,7 @@ class Translator {
         britishToAmericanTitle[value] = key;
       }
 
-      let bigUkList = {...britishOnly, ...britishToAmericanSpelling}
+      let bigUkList = { ...britishOnly, ...britishToAmericanSpelling };
 
       // check for words
       for (let word of wordsArr) {
@@ -111,15 +233,14 @@ class Translator {
             word,
             `<span class="highlight">${bigUkList[word.toLowerCase()]}</span>`
           );
+
           changesMade = true;
         }
       }
 
       // check for titles
       for (let title of titlesArr) {
-        if (
-          Object.keys(britishToAmericanTitle).includes(title.toLowerCase())
-        ) {
+        if (Object.keys(britishToAmericanTitle).includes(title.toLowerCase())) {
           text = text.replace(
             title,
             `<span class="highlight">${this.capitalizeTitle(
@@ -142,21 +263,24 @@ class Translator {
         }
       }
 
-
       // check if no changes
       if (!changesMade) {
-        text = "Everything looks good to me!"
+        text = "Everything looks good to me!";
       }
     }
 
     // remove duplicates
-    text = [...new Set(text.split(/\s(?=<span)|(?<=\>)\s/))].join(" ")
+    // text = [...new Set(text.split(/\s(?=<span)|(?<=\>)\s/))].join(" ");
     console.log(text);
 
     return text;
   }
 }
 let translator = new Translator();
-translator.translate("To play hooky means to skip class or work.", "american-to-british")
+console.log(translator.translate(
+  "I had a bicky then went to the chippy.",
+  "british-to-american"
+).replace(/<span class="highlight">/g, "")
+.replace(/<\/span>/g, ""))
 
 module.exports = Translator;
